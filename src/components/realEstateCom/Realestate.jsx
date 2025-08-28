@@ -193,16 +193,16 @@ const RealEstateServicesPage = () => {
 
         {/* Header Content */}
         <div className="relative z-10 py-8 md:py-12 px-6 md:px-12">
-          <motion.h1
+        <motion.h1
             variants={serviceVariants}
-            className="text-2xl md:text-4xl lg:text-5xl font-bold text-center text-primary-dark mb-4 md:mb-8"
+            className="text-2xl md:text-4xl lg:text-5xl font-bold text-center text-primary-dark mb-4 md:mb-8 leading-tight"
           >
             {t.title}
           </motion.h1>
 
           <motion.p
             variants={serviceVariants}
-            className="text-base md:text-xl text-center text-gray-600 mx-auto mb-6 md:mb-8 max-w-4xl"
+            className="text-base md:text-xl text-center text-gray-600 mx-auto mb-8 md:mb-16 max-w-3xl"
           >
             {t.subtitle}
           </motion.p>
