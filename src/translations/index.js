@@ -804,7 +804,7 @@ export const translations = {
       contact: "Contact",
     },
     hero: {
-      title: "Legal Expertise for Your Portuguese Journey 1",
+      title: "Legal Expertise for Your Portuguese Journey",
       subtitle:
         "Specialized guidance for relocation, real estate investment, and business creation in Portugal",
       cta: "Schedule a Discovery Call",
