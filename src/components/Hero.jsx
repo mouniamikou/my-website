@@ -35,7 +35,7 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-3xl lg:text-5xl font-bold text-gray-900 sm:mt-36 mb-8"
             >
-              {t.title}
+            Dr  {t.title}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
