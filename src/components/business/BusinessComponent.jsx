@@ -153,7 +153,7 @@ const BusinessFormationService = () => {
       <div className="relative mb-8 md:mb-12 max-w-6xl mx-auto">
         <div className="absolute inset-0 z-0 rounded-xl md:rounded-none overflow-hidden">
           <Image
-            src="/bussImg.png"
+            src="/optimgbus.png"
             alt="Business background"
             fill
             priority
