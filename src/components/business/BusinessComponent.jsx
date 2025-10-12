@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Download,
@@ -18,19 +18,28 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/translations";
 
+// Icon mapping outside component to prevent recreation
+const ICON_MAP = {
+  0: Download,
+  1: Building,
+  2: FileCheck,
+  3: Users,
+  4: Scale,
+};
+
 const BusinessFormationService = () => {
   const { language } = useLanguage();
   const t = translations[language]?.business || translations.en.business;
 
   const [activeStep, setActiveStep] = useState(0);
   const [showTips, setShowTips] = useState(true);
-  const [currentStep, setCurrentStep] = useState(null);
-  const [steps, setSteps] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
+  
   const timelineRef = useRef(null);
   const stepRefs = useRef([]);
 
-  const serviceVariants = {
+  // Memoized service variants to prevent recreation
+  const serviceVariants = useMemo(() => ({
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -40,9 +49,47 @@ const BusinessFormationService = () => {
         ease: "easeOut",
       },
     },
-  };
+  }), []);
 
-  // Check if mobile on mount and resize
+  // Memoize steps creation - only recreate when translations actually change
+  const steps = useMemo(() => {
+    if (!t?.steps || !Array.isArray(t.steps)) return [];
+    
+    return t.steps.map((step, index) => {
+      const IconComponent = ICON_MAP[index] || Download;
+      return {
+        title: step?.title || "",
+        description: step?.description || "",
+        icon: <IconComponent className="w-6 h-6 text-[#039B9B]" />,
+        duration: step?.duration || "1-2 weeks",
+        details: step?.details || [],
+        tips: step?.tips || "",
+        requiredDocs: step?.requiredDocs || [],
+      };
+    });
+  }, [t?.steps]);
+
+  // Memoize current step
+  const currentStep = useMemo(() => 
+    steps[activeStep] || null,
+    [steps, activeStep]
+  );
+
+  // Memoize visible steps for mobile
+  const visibleSteps = useMemo(() => {
+    if (!isMobile) return steps;
+    
+    const visible = [];
+    if (steps[activeStep]) {
+      visible.push({ ...steps[activeStep], originalIndex: activeStep });
+    }
+    if (steps[activeStep + 1]) {
+      visible.push({ ...steps[activeStep + 1], originalIndex: activeStep + 1 });
+    }
+    return visible;
+  }, [isMobile, steps, activeStep]);
+
+  // Mobile detection effect
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -53,69 +100,13 @@ const BusinessFormationService = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Debounced auto-scroll effect
   useEffect(() => {
-    // Recreate the steps array when language changes
-    if (t?.steps) {
-      const newSteps = [
-        {
-          title: t.steps[0]?.title || "Preparation",
-          description: t.steps[0]?.description || "Initial Setup",
-          icon: <Download className="w-6 h-6 text-[#039B9B]" />,
-          duration: "1-2 weeks",
-          details: t.steps[0]?.details || ["Initial setup tasks"],
-          tips: t.steps[0]?.tips || "Important preparation considerations",
-          requiredDocs: t.steps[0]?.requiredDocs || ["Required documents"],
-        },
-        {
-          title: t.steps[1]?.title || "Registration",
-          description: t.steps[1]?.description || "Company Registration",
-          icon: <Building className="w-6 h-6 text-[#039B9B]" />,
-          duration: "1-2 weeks",
-          details: t.steps[1]?.details || ["Registration tasks"],
-          tips: t.steps[1]?.tips || "Registration considerations",
-          requiredDocs: t.steps[1]?.requiredDocs || ["Registration documents"],
-        },
-        {
-          title: t.steps[2]?.title || "Documentation",
-          description: t.steps[2]?.description || "Legal Documentation",
-          icon: <FileCheck className="w-6 h-6 text-[#039B9B]" />,
-          duration: "1-3 business days",
-          details: t.steps[2]?.details || ["Documentation tasks"],
-          tips: t.steps[2]?.tips || "Documentation tips",
-          requiredDocs: t.steps[2]?.requiredDocs || ["Legal documents"],
-        },
-        {
-          title: t.steps[3]?.title || "Team Setup",
-          description: t.steps[3]?.description || "Team Formation",
-          icon: <Users className="w-6 h-6 text-[#039B9B]" />,
-          duration: "1-2 weeks",
-          details: t.steps[3]?.details || ["Team setup tasks"],
-          tips: t.steps[3]?.tips || "Team formation tips",
-          requiredDocs: t.steps[3]?.requiredDocs || ["Team documents"],
-        },
-        {
-          title: t.steps[4]?.title || "Compliance",
-          description: t.steps[4]?.description || "Legal Compliance",
-          icon: <Scale className="w-6 h-6 text-[#039B9B]" />,
-          duration: "1-2 weeks",
-          details: t.steps[4]?.details || ["Compliance tasks"],
-          tips: t.steps[4]?.tips || "Compliance considerations",
-          requiredDocs: t.steps[4]?.requiredDocs || ["Compliance documents"],
-        },
-      ];
-      setSteps(newSteps);
+    if (!isMobile || !timelineRef.current || !stepRefs.current[activeStep]) {
+      return;
     }
-  }, [language, t]);
 
-  useEffect(() => {
-    if (steps.length > 0) {
-      setCurrentStep(steps[activeStep]);
-    }
-  }, [activeStep, steps]);
-
-  // Auto-scroll to active step on mobile
-  useEffect(() => {
-    if (isMobile && timelineRef.current && stepRefs.current[activeStep]) {
+    const timeoutId = setTimeout(() => {
       const timeline = timelineRef.current;
       const activeStepElement = stepRefs.current[activeStep];
       
@@ -131,39 +122,42 @@ const BusinessFormationService = () => {
           behavior: 'smooth'
         });
       }
-    }
+    }, 50); // Debounce by 50ms
+
+    return () => clearTimeout(timeoutId);
   }, [activeStep, isMobile]);
 
-  const handleNext = () => {
+  // Memoized handlers
+  const handleNext = useCallback(() => {
     if (activeStep < steps.length - 1) {
-      setActiveStep((prevStep) => prevStep + 1);
+      setActiveStep(prev => prev + 1);
     }
-  };
+  }, [activeStep, steps.length]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (activeStep > 0) {
-      setActiveStep((prevStep) => prevStep - 1);
+      setActiveStep(prev => prev - 1);
     }
-  };
+  }, [activeStep]);
 
-  const handleStepClick = (index) => {
+  const handleStepClick = useCallback((index) => {
     setActiveStep(index);
-  };
+  }, []);
 
-  const getVisibleSteps = () => {
-    if (!isMobile) return steps;
-    
-    const visibleSteps = [];
-    if (steps[activeStep]) {
-      visibleSteps.push({ ...steps[activeStep], originalIndex: activeStep });
-    }
-    if (steps[activeStep + 1]) {
-      visibleSteps.push({ ...steps[activeStep + 1], originalIndex: activeStep + 1 });
-    }
-    return visibleSteps;
-  };
+  const toggleTips = useCallback(() => {
+    setShowTips(prev => !prev);
+  }, []);
 
-  if (!currentStep || steps.length === 0) return null;
+  // Early return if no steps available
+  if (!currentStep || steps.length === 0) {
+    return (
+      <div className="py-12 md:py-24 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-gray-600">Loading business formation steps...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-12 md:py-24 px-4">
@@ -183,12 +177,16 @@ const BusinessFormationService = () => {
         <div className="relative z-10 py-8 md:py-12 px-6 md:px-12">
           <motion.h1
             variants={serviceVariants}
+            initial="hidden"
+            animate="visible"
             className="text-2xl md:text-4xl lg:text-5xl font-bold text-center text-primary-dark mb-4 md:mb-8"
           >
             {t.formationPackage?.title || "Business Formation Package"}
           </motion.h1>
           <motion.p
             variants={serviceVariants}
+            initial="hidden"
+            animate="visible"
             className="text-base md:text-xl text-center text-gray-600 max-w-3xl mx-auto mb-8 md:mb-16"
           >
             {t.formationPackage?.subtitle || "Comprehensive business formation services to get your company started in Portugal"}
@@ -204,8 +202,9 @@ const BusinessFormationService = () => {
               {t.formationProcess || "Formation Process"}
             </h2>
             <button
-              onClick={() => setShowTips(!showTips)}
+              onClick={toggleTips}
               className="p-2 rounded-full hover:bg-[#039B9B]/10 transition-colors"
+              aria-label={showTips ? "Hide tips" : "Show tips"}
             >
               <Info
                 className={`w-5 h-5 md:w-6 md:h-6 ${showTips ? "text-primary-dark" : "text-gray-400"}`}
@@ -215,6 +214,7 @@ const BusinessFormationService = () => {
 
           {/* Timeline */}
           <div className="relative mb-6 md:mb-12">
+            {/* Desktop Progress Line */}
             <div className="absolute top-4 left-0 w-full h-1 bg-[#039B9B]/10 hidden md:block" />
             <div 
               className="absolute top-4 left-0 h-1 bg-[#039B9B] transition-all duration-500 hidden md:block"
@@ -231,7 +231,7 @@ const BusinessFormationService = () => {
             >
               {isMobile ? (
                 <div className="flex gap-8 px-4 justify-center">
-                  {getVisibleSteps().map((step, displayIndex) => {
+                  {visibleSteps.map((step, displayIndex) => {
                     const index = step.originalIndex;
                     const isActive = index === activeStep;
                     const isNext = index === activeStep + 1;
@@ -248,13 +248,14 @@ const BusinessFormationService = () => {
                         transition={{ delay: displayIndex * 0.1 }}
                       >
                         <button
-                          onClick={() => isActive || isNext ? handleStepClick(index) : null}
+                          onClick={() => (isActive || isNext) ? handleStepClick(index) : null}
                           disabled={!isActive && !isNext}
                           className={`w-12 h-12 rounded-full flex items-center justify-center z-10
                             ${isActive ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white shadow-lg" : 
                               isNext ? "bg-white text-gray-400 border-2 border-gray-300" :
                               "bg-white text-gray-400 border-2 border-gray-400"}
                             transition-all duration-300 ${(isActive || isNext) ? 'cursor-pointer hover:shadow-lg' : 'cursor-not-allowed opacity-50'}`}
+                          aria-label={`Step ${index + 1}: ${step.title}`}
                         >
                           <span className="font-bold text-base">{index + 1}</span>
                         </button>
@@ -299,6 +300,7 @@ const BusinessFormationService = () => {
                           ${index === activeStep ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white" : "bg-white"}
                           border-2 border-current
                           transition-all duration-300 cursor-pointer hover:shadow-lg`}
+                        aria-label={`Step ${index + 1}: ${step.title}`}
                       >
                         <span className="font-medium text-sm">{index + 1}</span>
                       </button>
@@ -332,6 +334,7 @@ const BusinessFormationService = () => {
                   ? "bg-[#039B9B] text-white hover:shadow-lg"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
+              aria-label="Previous step"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>{t.stepAction?.previous || "Previous"}</span>
@@ -344,6 +347,7 @@ const BusinessFormationService = () => {
                   ? "bg-[#039B9B] text-white hover:shadow-lg"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
+              aria-label="Next step"
             >
               <span>{t.stepAction?.next || "Next"}</span>
               <ChevronRight className="w-4 h-4" />
@@ -357,6 +361,7 @@ const BusinessFormationService = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
               className="space-y-6 md:grid md:grid-cols-2 md:gap-8 md:space-y-0"
             >
               {/* Details Section */}
@@ -426,6 +431,7 @@ const BusinessFormationService = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
           className="mt-8 md:mt-16 text-center"
         >
           <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-[#039B9B] mb-4">
