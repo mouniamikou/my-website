@@ -124,7 +124,6 @@ const BusinessFormationService = () => {
         const stepWidth = activeStepElement.offsetWidth;
         const timelineWidth = timeline.offsetWidth;
         
-        // Calculate scroll position to center the active step
         const scrollLeft = stepOffsetLeft - (timelineWidth / 2) + (stepWidth / 2);
         
         timeline.scrollTo({
@@ -157,19 +156,17 @@ const BusinessFormationService = () => {
     <div className="py-12 md:py-24 px-4">
       {/* Header Section with Background */}
       <div className="relative mb-8 md:mb-12 max-w-6xl mx-auto">
-        {/* Background Image with Overlay */}
         <div
           className="absolute inset-0 z-0 rounded-xl md:rounded-none"
           style={{
-            backgroundImage: "url('/krakenimages-376KN_ISplE-unsplash.jpg')",
+            backgroundImage: "url('/passportPP.jpeg')",
             backgroundSize: "cover",
-            backgroundPosition: "0% 30%",
+            backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             opacity: "0.3",
           }}
         />
 
-        {/* Header Content */}
         <div className="relative z-10 py-8 md:py-12 px-6 md:px-12">
           <motion.h1
             variants={serviceVariants}
@@ -203,25 +200,14 @@ const BusinessFormationService = () => {
             </button>
           </div>
 
-          {/* Mobile Step Counter */}
-          {/* {isMobile && (
-            <div className="text-center mb-4">
-              <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                Step {activeStep + 1} of {steps.length}
-              </span>
-            </div>
-          )} */}
-
           {/* Timeline */}
           <div className="relative mb-6 md:mb-12">
-            {/* Progress Line */}
             <div className="absolute top-8 left-0 w-full h-1 bg-[#039B9B]/10 hidden md:block" />
             <div 
               className="absolute top-8 left-0 h-1 bg-[#039B9B] transition-all duration-500 hidden md:block"
               style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
             />
 
-            {/* Timeline Container */}
             <div 
               ref={timelineRef}
               className="relative overflow-x-auto scrollbar-hide pb-4"
@@ -255,7 +241,6 @@ const BusinessFormationService = () => {
                       <span className="font-medium text-sm">{index + 1}</span>
                     </button>
 
-                    {/* Mobile: Show connecting line to next step */}
                     {isMobile && index < steps.length - 1 && (
                       <div className="absolute top-4 left-12 w-32 h-0.5 bg-[#039B9B]/20">
                         <div 
@@ -346,7 +331,6 @@ const BusinessFormationService = () => {
 
               {/* Tips and Documents Section */}
               <div className="space-y-6 md:space-y-8 order-2">
-                {/* Tips */}
                 {showTips && (
                   <div className="bg-[#039B9B]/10 rounded-lg p-4 md:p-6">
                     <div className="flex items-start gap-3">
@@ -363,7 +347,6 @@ const BusinessFormationService = () => {
                   </div>
                 )}
 
-                {/* Required Documents */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <FileText className="w-5 h-5 md:w-6 md:h-6 text-primary-dark" />
