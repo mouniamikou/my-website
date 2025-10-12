@@ -34,7 +34,6 @@ const BusinessFormationService = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [showTips, setShowTips] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  
   const timelineRef = useRef(null);
   const stepRefs = useRef([]);
 
@@ -149,15 +148,16 @@ const BusinessFormationService = () => {
   }, []);
 
   // Early return if no steps available
-  if (!currentStep || steps.length === 0) {
-    return (
-      <div className="py-12 md:py-24 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-gray-600">Loading business formation steps...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (!currentStep || steps.length === 0) {
+  //   return (
+  //     <div className="py-12 md:py-24 px-4">
+  //       <div className="max-w-6xl mx-auto text-center">
+  //         <p className="text-gray-600">Loading business formation steps...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+  if (!currentStep) return null;
 
   return (
     <div className="py-12 md:py-24 px-4">
@@ -177,16 +177,14 @@ const BusinessFormationService = () => {
         <div className="relative z-10 py-8 md:py-12 px-6 md:px-12">
           <motion.h1
             variants={serviceVariants}
-            initial="hidden"
-            animate="visible"
+       
             className="text-2xl md:text-4xl lg:text-5xl font-bold text-center text-primary-dark mb-4 md:mb-8"
           >
             {t.formationPackage?.title || "Business Formation Package"}
           </motion.h1>
           <motion.p
             variants={serviceVariants}
-            initial="hidden"
-            animate="visible"
+          
             className="text-base md:text-xl text-center text-gray-600 max-w-3xl mx-auto mb-8 md:mb-16"
           >
             {t.formationPackage?.subtitle || "Comprehensive business formation services to get your company started in Portugal"}
