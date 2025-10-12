@@ -150,6 +150,19 @@ const BusinessFormationService = () => {
     setActiveStep(index);
   };
 
+  const getVisibleSteps = () => {
+    if (!isMobile) return steps;
+    
+    const visibleSteps = [];
+    if (steps[activeStep]) {
+      visibleSteps.push({ ...steps[activeStep], originalIndex: activeStep });
+    }
+    if (steps[activeStep + 1]) {
+      visibleSteps.push({ ...steps[activeStep + 1], originalIndex: activeStep + 1 });
+    }
+    return visibleSteps;
+  };
+
   if (!currentStep || steps.length === 0) return null;
 
   return (
@@ -159,7 +172,7 @@ const BusinessFormationService = () => {
         <div
           className="absolute inset-0 z-0 rounded-xl md:rounded-none"
           style={{
-            backgroundImage: "url('/passportPP.jpeg')",
+            backgroundImage: "url('/bussImg.png')",
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
@@ -202,9 +215,9 @@ const BusinessFormationService = () => {
 
           {/* Timeline */}
           <div className="relative mb-6 md:mb-12">
-            <div className="absolute top-8 left-0 w-full h-1 bg-[#039B9B]/10 hidden md:block" />
+            <div className="absolute top-4 left-0 w-full h-1 bg-[#039B9B]/10 hidden md:block" />
             <div 
-              className="absolute top-8 left-0 h-1 bg-[#039B9B] transition-all duration-500 hidden md:block"
+              className="absolute top-4 left-0 h-1 bg-[#039B9B] transition-all duration-500 hidden md:block"
               style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
             />
 
@@ -216,58 +229,96 @@ const BusinessFormationService = () => {
                 msOverflowStyle: 'none'
               }}
             >
-              <div className="flex md:justify-between gap-4 md:gap-0 px-4 md:px-0" style={{ minWidth: isMobile ? `${steps.length * 200}px` : 'auto' }}>
-                {steps.map((step, index) => (
-                  <motion.div
-                    key={index}
-                    ref={el => stepRefs.current[index] = el}
-                    className={`relative flex flex-col items-center group ${
-                      isMobile ? 'w-48 flex-shrink-0' : 'w-40 sm:w-48'
-                    } ${
-                      index === activeStep ? "scale-105" : ""
-                    }`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <button
-                      onClick={() => handleStepClick(index)}
-                      className={`w-8 h-8 mt-1 rounded-full flex items-center justify-center
-                        ${index <= activeStep ? "text-primary-dark" : "text-gray-400"} 
-                        ${index === activeStep ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white" : "bg-white"}
-                        border-2 border-current
-                        transition-all duration-300 cursor-pointer group-hover:shadow-lg`}
-                    >
-                      <span className="font-medium text-sm">{index + 1}</span>
-                    </button>
+              {isMobile ? (
+                <div className="flex gap-8 px-4 justify-center">
+                  {getVisibleSteps().map((step, displayIndex) => {
+                    const index = step.originalIndex;
+                    const isActive = index === activeStep;
+                    const isNext = index === activeStep + 1;
+                    
+                    return (
+                      <motion.div
+                        key={index}
+                        ref={el => stepRefs.current[index] = el}
+                        className={`relative flex flex-col items-center w-32 flex-shrink-0 ${
+                          isActive ? "scale-110" : "scale-90"
+                        }`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: displayIndex * 0.1 }}
+                      >
+                        <button
+                          onClick={() => isActive || isNext ? handleStepClick(index) : null}
+                          disabled={!isActive && !isNext}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center z-10
+                            ${isActive ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white shadow-lg" : 
+                              isNext ? "bg-white text-gray-400 border-2 border-gray-300" :
+                              "bg-white text-gray-400 border-2 border-gray-400"}
+                            transition-all duration-300 ${(isActive || isNext) ? 'cursor-pointer hover:shadow-lg' : 'cursor-not-allowed opacity-50'}`}
+                        >
+                          <span className="font-bold text-base">{index + 1}</span>
+                        </button>
 
-                    {isMobile && index < steps.length - 1 && (
-                      <div className="absolute top-4 left-12 w-32 h-0.5 bg-[#039B9B]/20">
-                        <div 
-                          className={`h-full bg-[#039B9B] transition-all duration-500 ${
-                            index < activeStep ? 'w-full' : 'w-0'
+                        <div
+                          className={`text-center mt-4 transition-colors duration-300 ${
+                            isActive ? "text-primary-dark" : "text-gray-500"
                           }`}
-                        />
-                      </div>
-                    )}
-
-                    <div
-                      className={`text-center mt-4 transition-colors duration-300 ${
-                        index === activeStep
-                          ? "text-primary-dark"
-                          : "text-gray-600"
+                        >
+                          <h3 className={`font-bold mb-1 leading-tight ${
+                            isActive ? "text-sm" : "text-xs"
+                          }`}>
+                            {step.title}
+                          </h3>
+                          <p className={`opacity-80 leading-tight ${
+                            isActive ? "text-xs" : "text-[10px]"
+                          }`}>
+                            {step.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex justify-between gap-0 px-0">
+                  {steps.map((step, index) => (
+                    <motion.div
+                      key={index}
+                      ref={el => stepRefs.current[index] = el}
+                      className={`relative flex flex-col items-center w-40 sm:w-48 ${
+                        index === activeStep ? "scale-105" : ""
                       }`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
                     >
-                      <h3 className="font-bold text-xs sm:text-sm mb-1 leading-tight">
-                        {step.title}
-                      </h3>
-                      <p className="text-xs opacity-80 leading-tight">
-                        {step.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                      <button
+                        onClick={() => handleStepClick(index)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center z-10
+                          ${index <= activeStep ? "text-primary-dark" : "text-gray-400"} 
+                          ${index === activeStep ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white" : "bg-white"}
+                          border-2 border-current
+                          transition-all duration-300 cursor-pointer hover:shadow-lg`}
+                      >
+                        <span className="font-medium text-sm">{index + 1}</span>
+                      </button>
+
+                      <div
+                        className={`text-center mt-4 transition-colors duration-300 ${
+                          index === activeStep ? "text-primary-dark" : "text-gray-600"
+                        }`}
+                      >
+                        <h3 className="font-bold text-xs sm:text-sm mb-1 leading-tight">
+                          {step.title}
+                        </h3>
+                        <p className="text-xs opacity-80 leading-tight">
+                          {step.description}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
