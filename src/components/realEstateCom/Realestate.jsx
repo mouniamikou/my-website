@@ -271,27 +271,26 @@ const RealEstateServicesPage = () => {
 
           {/* Timeline */}
           <div className="relative mb-6 md:mb-12">
-            <div className="absolute top-4 left-0 w-full h-1 bg-[#039B9B]/10 hidden md:block" />
-            <div 
-              className="absolute top-4 left-0 h-1 bg-[#039B9B] transition-all duration-500 hidden md:block"
-              style={{ width: `${((activeStep + 1) / currentSteps.length) * 100}%` }}
-            />
-
             <div 
               ref={timelineRef}
-              className="relative overflow-x-auto scrollbar-hide pb-4 cursor-grab active:cursor-grabbing"
+              className="relative overflow-x-auto scrollbar-hide py-4"
               style={{ 
                 scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-                WebkitOverflowScrolling: 'touch'
+                msOverflowStyle: 'none'
               }}
             >
               {isMobile ? (
-                <div className="flex gap-8 px-4 justify-center">
-                  {getVisibleSteps().map((step, displayIndex) => {
-                    const index = step.originalIndex;
+                <div className="relative flex gap-8 px-4" style={{ minWidth: `${currentSteps.length * 160}px` }}>
+                  {/* Progress Line for Mobile - positioned under circles */}
+                  <div className="absolute top-[56px] left-0 right-0 h-0.5 bg-[#039B9B]/10 mx-4">
+                    <div 
+                      className="h-full bg-[#039B9B] transition-all duration-500"
+                      style={{ width: `${(activeStep / (currentSteps.length - 1)) * 100}%` }}
+                    />
+                  </div>
+
+                  {currentSteps.map((step, index) => {
                     const isActive = index === activeStep;
-                    const isNext = index === activeStep + 1;
                     
                     return (
                       <motion.div
@@ -302,16 +301,14 @@ const RealEstateServicesPage = () => {
                         }`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: displayIndex * 0.1 }}
+                        transition={{ delay: index * 0.1 }}
                       >
                         <button
-                          onClick={() => isActive || isNext ? handleStepClick(index) : null}
-                          disabled={!isActive && !isNext}
+                          onClick={() => handleStepClick(index)}
                           className={`w-12 h-12 rounded-full flex items-center justify-center z-10
                             ${isActive ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white shadow-lg" : 
-                              isNext ? "bg-white text-gray-400 border-2 border-gray-300" :
-                              "bg-white text-gray-400 border-2 border-gray-400"}
-                            transition-all duration-300 ${(isActive || isNext) ? 'cursor-pointer hover:shadow-lg' : 'cursor-not-allowed opacity-50'}`}
+                              "bg-white text-gray-400 border-2 border-gray-300"}
+                            transition-all duration-300 cursor-pointer hover:shadow-lg`}
                         >
                           <span className="font-bold text-base">{index + 1}</span>
                         </button>
@@ -337,7 +334,15 @@ const RealEstateServicesPage = () => {
                   })}
                 </div>
               ) : (
-                <div className="flex justify-between gap-0 px-0">
+                <div className="relative flex justify-between gap-0 px-0">
+                  {/* Progress Line for Desktop - positioned under circles */}
+                  <div className="absolute top-[16px] left-0 right-0 h-0.5 bg-[#039B9B]/10">
+                    <div 
+                      className="h-full bg-[#039B9B] transition-all duration-500"
+                      style={{ width: `${(activeStep / (currentSteps.length - 1)) * 100}%` }}
+                    />
+                  </div>
+
                   {currentSteps.map((step, index) => (
                     <motion.div
                       key={index}

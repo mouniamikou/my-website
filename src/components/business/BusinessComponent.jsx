@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import {
   Download,
   FileText,
@@ -19,17 +18,15 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/translations";
 
-// Pre-define icon map for instant access
-const ICONS = [Download, Building, FileCheck, Users, Scale];
-
 const BusinessFormationService = () => {
   const { language } = useLanguage();
   const t = translations[language]?.business || translations.en.business;
 
   const [activeStep, setActiveStep] = useState(0);
   const [showTips, setShowTips] = useState(true);
+  const [currentStep, setCurrentStep] = useState(null);
+  const [steps, setSteps] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
-  
   const timelineRef = useRef(null);
   const stepRefs = useRef([]);
 
@@ -45,28 +42,7 @@ const BusinessFormationService = () => {
     },
   };
 
-  // OPTIMIZED: Create steps synchronously with useMemo - no useEffect delay
-  const steps = useMemo(() => {
-    if (!t?.steps) return [];
-    
-    return t.steps.map((step, index) => {
-      const IconComponent = ICONS[index] || Download;
-      return {
-        title: step?.title || "",
-        description: step?.description || "",
-        icon: <IconComponent className="w-6 h-6 text-[#039B9B]" />,
-        duration: "1-2 weeks",
-        details: step?.details || [],
-        tips: step?.tips || "",
-        requiredDocs: step?.requiredDocs || [],
-      };
-    });
-  }, [t?.steps]);
-
-  // OPTIMIZED: Direct access to current step - no separate useEffect
-  const currentStep = steps[activeStep] || null;
-
-  // Mobile detection
+  // Check if mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -77,13 +53,69 @@ const BusinessFormationService = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Auto-scroll with debounce
   useEffect(() => {
-    if (!isMobile || !timelineRef.current || !stepRefs.current[activeStep]) {
-      return;
+    // Recreate the steps array when language changes
+    if (t?.steps) {
+      const newSteps = [
+        {
+          title: t.steps[0]?.title || "Preparation",
+          description: t.steps[0]?.description || "Initial Setup",
+          icon: <Download className="w-6 h-6 text-[#039B9B]" />,
+          duration: "1-2 weeks",
+          details: t.steps[0]?.details || ["Initial setup tasks"],
+          tips: t.steps[0]?.tips || "Important preparation considerations",
+          requiredDocs: t.steps[0]?.requiredDocs || ["Required documents"],
+        },
+        {
+          title: t.steps[1]?.title || "Registration",
+          description: t.steps[1]?.description || "Company Registration",
+          icon: <Building className="w-6 h-6 text-[#039B9B]" />,
+          duration: "1-2 weeks",
+          details: t.steps[1]?.details || ["Registration tasks"],
+          tips: t.steps[1]?.tips || "Registration considerations",
+          requiredDocs: t.steps[1]?.requiredDocs || ["Registration documents"],
+        },
+        {
+          title: t.steps[2]?.title || "Documentation",
+          description: t.steps[2]?.description || "Legal Documentation",
+          icon: <FileCheck className="w-6 h-6 text-[#039B9B]" />,
+          duration: "1-3 business days",
+          details: t.steps[2]?.details || ["Documentation tasks"],
+          tips: t.steps[2]?.tips || "Documentation tips",
+          requiredDocs: t.steps[2]?.requiredDocs || ["Legal documents"],
+        },
+        {
+          title: t.steps[3]?.title || "Team Setup",
+          description: t.steps[3]?.description || "Team Formation",
+          icon: <Users className="w-6 h-6 text-[#039B9B]" />,
+          duration: "1-2 weeks",
+          details: t.steps[3]?.details || ["Team setup tasks"],
+          tips: t.steps[3]?.tips || "Team formation tips",
+          requiredDocs: t.steps[3]?.requiredDocs || ["Team documents"],
+        },
+        {
+          title: t.steps[4]?.title || "Compliance",
+          description: t.steps[4]?.description || "Legal Compliance",
+          icon: <Scale className="w-6 h-6 text-[#039B9B]" />,
+          duration: "1-2 weeks",
+          details: t.steps[4]?.details || ["Compliance tasks"],
+          tips: t.steps[4]?.tips || "Compliance considerations",
+          requiredDocs: t.steps[4]?.requiredDocs || ["Compliance documents"],
+        },
+      ];
+      setSteps(newSteps);
     }
+  }, [language, t]);
 
-    const timeoutId = setTimeout(() => {
+  useEffect(() => {
+    if (steps.length > 0) {
+      setCurrentStep(steps[activeStep]);
+    }
+  }, [activeStep, steps]);
+
+  // Auto-scroll to active step on mobile
+  useEffect(() => {
+    if (isMobile && timelineRef.current && stepRefs.current[activeStep]) {
       const timeline = timelineRef.current;
       const activeStepElement = stepRefs.current[activeStep];
       
@@ -91,6 +123,7 @@ const BusinessFormationService = () => {
         const stepOffsetLeft = activeStepElement.offsetLeft;
         const stepWidth = activeStepElement.offsetWidth;
         const timelineWidth = timeline.offsetWidth;
+        
         const scrollLeft = stepOffsetLeft - (timelineWidth / 2) + (stepWidth / 2);
         
         timeline.scrollTo({
@@ -98,20 +131,18 @@ const BusinessFormationService = () => {
           behavior: 'smooth'
         });
       }
-    }, 50);
-
-    return () => clearTimeout(timeoutId);
+    }
   }, [activeStep, isMobile]);
 
   const handleNext = () => {
     if (activeStep < steps.length - 1) {
-      setActiveStep(prev => prev + 1);
+      setActiveStep((prevStep) => prevStep + 1);
     }
   };
 
   const handlePrevious = () => {
     if (activeStep > 0) {
-      setActiveStep(prev => prev - 1);
+      setActiveStep((prevStep) => prevStep - 1);
     }
   };
 
@@ -122,58 +153,42 @@ const BusinessFormationService = () => {
   const getVisibleSteps = () => {
     if (!isMobile) return steps;
     
-    const visible = [];
+    const visibleSteps = [];
     if (steps[activeStep]) {
-      visible.push({ ...steps[activeStep], originalIndex: activeStep });
+      visibleSteps.push({ ...steps[activeStep], originalIndex: activeStep });
     }
     if (steps[activeStep + 1]) {
-      visible.push({ ...steps[activeStep + 1], originalIndex: activeStep + 1 });
+      visibleSteps.push({ ...steps[activeStep + 1], originalIndex: activeStep + 1 });
     }
-    return visible;
+    return visibleSteps;
   };
 
-  // Show loading state
-  if (!currentStep || steps.length === 0) {
-    return (
-      <div className="py-12 md:py-24 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-8"></div>
-            <div className="h-96 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!currentStep || steps.length === 0) return null;
 
   return (
     <div className="py-12 md:py-24 px-4">
-      {/* OPTIMIZED: Use Next.js Image with priority for faster loading */}
+      {/* Header Section with Background */}
       <div className="relative mb-8 md:mb-12 max-w-6xl mx-auto">
-        <div className="absolute inset-0 z-0 rounded-xl md:rounded-none overflow-hidden">
-          <Image
-            src="/optiBusinImg.jpg"
-            alt="Business background"
-            fill
-            priority
-            quality={75}
-            className="object-cover opacity-30"
-            sizes="(max-width: 768px) 100vw, 1200px"
-          />
-        </div>
+        <div
+          className="absolute inset-0 z-0 rounded-xl md:rounded-none"
+          style={{
+            backgroundImage: "url('/optiBusinImg.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            opacity: "0.3",
+          }}
+        />
 
         <div className="relative z-10 py-8 md:py-12 px-6 md:px-12">
           <motion.h1
             variants={serviceVariants}
-           
             className="text-2xl md:text-4xl lg:text-5xl font-bold text-center text-primary-dark mb-4 md:mb-8"
           >
             {t.formationPackage?.title || "Business Formation Package"}
           </motion.h1>
           <motion.p
             variants={serviceVariants}
-        
             className="text-base md:text-xl text-center text-gray-600 max-w-3xl mx-auto mb-8 md:mb-16"
           >
             {t.formationPackage?.subtitle || "Comprehensive business formation services to get your company started in Portugal"}
@@ -183,6 +198,7 @@ const BusinessFormationService = () => {
 
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-primary-dark">
               {t.formationProcess || "Formation Process"}
@@ -199,26 +215,26 @@ const BusinessFormationService = () => {
 
           {/* Timeline */}
           <div className="relative mb-6 md:mb-12">
-            <div className="absolute top-4 left-0 w-full h-1 bg-[#039B9B]/10 hidden md:block" />
-            <div 
-              className="absolute top-4 left-0 h-1 bg-[#039B9B] transition-all duration-500 hidden md:block"
-              style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
-            />
-
             <div 
               ref={timelineRef}
-              className="relative overflow-x-auto scrollbar-hide pb-4"
+              className="relative overflow-x-auto scrollbar-hide py-4"
               style={{ 
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none'
               }}
             >
               {isMobile ? (
-                <div className="flex gap-8 px-4 justify-center">
-                  {getVisibleSteps().map((step, displayIndex) => {
-                    const index = step.originalIndex;
+                <div className="relative flex gap-8 px-4" style={{ minWidth: `${steps.length * 160}px` }}>
+                  {/* Progress Line for Mobile - positioned under circles */}
+                  <div className="absolute top-[56px] left-0 right-0 h-0.5 bg-[#039B9B]/10 mx-4">
+                    <div 
+                      className="h-full bg-[#039B9B] transition-all duration-500"
+                      style={{ width: `${(activeStep / (steps.length - 1)) * 100}%` }}
+                    />
+                  </div>
+
+                  {steps.map((step, index) => {
                     const isActive = index === activeStep;
-                    const isNext = index === activeStep + 1;
                     
                     return (
                       <motion.div
@@ -229,16 +245,14 @@ const BusinessFormationService = () => {
                         }`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: displayIndex * 0.1 }}
+                        transition={{ delay: index * 0.1 }}
                       >
                         <button
-                          onClick={() => isActive || isNext ? handleStepClick(index) : null}
-                          disabled={!isActive && !isNext}
+                          onClick={() => handleStepClick(index)}
                           className={`w-12 h-12 rounded-full flex items-center justify-center z-10
                             ${isActive ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white shadow-lg" : 
-                              isNext ? "bg-white text-gray-400 border-2 border-gray-300" :
-                              "bg-white text-gray-400 border-2 border-gray-400"}
-                            transition-all duration-300 ${(isActive || isNext) ? 'cursor-pointer hover:shadow-lg' : 'cursor-not-allowed opacity-50'}`}
+                              "bg-white text-gray-400 border-2 border-gray-300"}
+                            transition-all duration-300 cursor-pointer hover:shadow-lg`}
                         >
                           <span className="font-bold text-base">{index + 1}</span>
                         </button>
@@ -264,7 +278,15 @@ const BusinessFormationService = () => {
                   })}
                 </div>
               ) : (
-                <div className="flex justify-between gap-0 px-0">
+                <div className="relative flex justify-between gap-0 px-0">
+                  {/* Progress Line for Desktop - positioned under circles */}
+                  <div className="absolute top-[16px] left-0 right-0 h-0.5 bg-[#039B9B]/10">
+                    <div 
+                      className="h-full bg-[#039B9B] transition-all duration-500"
+                      style={{ width: `${(activeStep / (steps.length - 1)) * 100}%` }}
+                    />
+                  </div>
+
                   {steps.map((step, index) => (
                     <motion.div
                       key={index}
@@ -343,6 +365,7 @@ const BusinessFormationService = () => {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6 md:grid md:grid-cols-2 md:gap-8 md:space-y-0"
             >
+              {/* Details Section */}
               <div className="order-1">
                 <div className="flex items-center gap-2 mb-4 md:mb-6">
                   {currentStep.icon}
@@ -363,6 +386,7 @@ const BusinessFormationService = () => {
                 </ul>
               </div>
 
+              {/* Tips and Documents Section */}
               <div className="space-y-6 md:space-y-8 order-2">
                 {showTips && (
                   <div className="bg-[#039B9B]/10 rounded-lg p-4 md:p-6">
@@ -404,6 +428,7 @@ const BusinessFormationService = () => {
           </AnimatePresence>
         </div>
 
+        {/* CTA Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

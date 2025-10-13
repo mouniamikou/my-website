@@ -200,80 +200,79 @@ const InstallationPortugal = () => {
 
           {/* Timeline */}
           <div className="relative mb-6 md:mb-12">
-            {/* Desktop Progress Line - Above circles */}
-            <div className="absolute top-4 left-0 w-full h-1 bg-[#039B9B]/10 hidden md:block" />
             <div 
-              className="absolute top-4 left-0 h-1 bg-[#039B9B] transition-all duration-500 hidden md:block"
-              style={{ width: `${((activeStep + 1) / currentSteps.length) * 100}%` }}
-            />
+              ref={timelineRef}
+              className="relative overflow-x-auto scrollbar-hide py-4"
+              style={{ 
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
+            >
+              {isMobile ? (
+                <div className="relative flex gap-8 px-4" style={{ minWidth: `${currentSteps.length * 160}px` }}>
+                  {/* Progress Line for Mobile - positioned under circles */}
+                  <div className="absolute top-[56px] left-0 right-0 h-0.5 bg-[#039B9B]/10 mx-4">
+                    <div 
+                      className="h-full bg-[#039B9B] transition-all duration-500"
+                      style={{ width: `${(activeStep / (currentSteps.length - 1)) * 100}%` }}
+                    />
+                  </div>
 
-<div 
-    ref={timelineRef}
-    className="relative overflow-x-auto scrollbar-hide pb-4 cursor-grab active:cursor-grabbing"
-    style={{ 
-      scrollbarWidth: 'none',
-      msOverflowStyle: 'none',
-      WebkitOverflowScrolling: 'touch'
-    }}
-  >
-   
+                  {currentSteps.map((step, index) => {
+                    const isActive = index === activeStep;
+                    
+                    return (
+                      <motion.div
+                        key={index}
+                        ref={el => stepRefs.current[index] = el}
+                        className={`relative flex flex-col items-center w-32 flex-shrink-0 ${
+                          isActive ? "scale-110" : "scale-90"
+                        }`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <button
+                          onClick={() => handleStepClick(index)}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center z-10
+                            ${isActive ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white shadow-lg" : 
+                              "bg-white text-gray-400 border-2 border-gray-300"}
+                            transition-all duration-300 cursor-pointer hover:shadow-lg`}
+                        >
+                          <span className="font-bold text-base">{index + 1}</span>
+                        </button>
 
-{isMobile ? (
-  <div className="flex gap-8 px-4 justify-center">
-    {getVisibleSteps().map((step, displayIndex) => {
-      const index = step.originalIndex;
-      const isActive = index === activeStep;
-      const isNext = index === activeStep + 1;
-      
-      return (
-        <motion.div
-          key={index}
-          ref={el => stepRefs.current[index] = el}
-          className={`relative flex flex-col items-center w-32 flex-shrink-0 ${
-            isActive ? "scale-110" : "scale-90"
-          }`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: displayIndex * 0.1 }}
-        >
-          {/* Removed the connection line completely for mobile */}
-          
-          <button
-            onClick={() => isActive || isNext ? handleStepClick(index) : null}
-            disabled={!isActive && !isNext}
-            className={`w-12 h-12 rounded-full flex items-center justify-center z-10
-              ${isActive ? "ring-4 ring-[#039B9B]/20 bg-[#039B9B] text-white shadow-lg" : 
-                isNext ? "bg-white text-gray-400 border-2 border-gray-300" :
-                "bg-white text-gray-400 border-2 border-gray-400"}
-              transition-all duration-300 ${(isActive || isNext) ? 'cursor-pointer hover:shadow-lg' : 'cursor-not-allowed opacity-50'}`}
-          >
-            <span className="font-bold text-base">{index + 1}</span>
-          </button>
-
-          <div
-            className={`text-center mt-4 transition-colors duration-300 ${
-              isActive ? "text-primary-dark" : "text-gray-500"
-            }`}
-          >
-            <h3 className={`font-bold mb-1 leading-tight ${
-              isActive ? "text-sm" : "text-xs"
-            }`}>
-              {step.title}
-            </h3>
-            <p className={`opacity-80 leading-tight ${
-              isActive ? "text-xs" : "text-[10px]"
-            }`}>
-              {step.description}
-            </p>
-          </div>
-        </motion.div>
-      );
-    })}
-  </div>
-) : (
-
+                        <div
+                          className={`text-center mt-4 transition-colors duration-300 ${
+                            isActive ? "text-primary-dark" : "text-gray-500"
+                          }`}
+                        >
+                          <h3 className={`font-bold mb-1 leading-tight ${
+                            isActive ? "text-sm" : "text-xs"
+                          }`}>
+                            {step.title}
+                          </h3>
+                          <p className={`opacity-80 leading-tight ${
+                            isActive ? "text-xs" : "text-[10px]"
+                          }`}>
+                            {step.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
                 /* Desktop: Show all steps */
-                <div className="flex justify-between gap-0 px-0">
+                <div className="relative flex justify-between gap-0 px-0">
+                  {/* Progress Line for Desktop - positioned under circles */}
+                  <div className="absolute top-[16px] left-0 right-0 h-0.5 bg-[#039B9B]/10">
+                    <div 
+                      className="h-full bg-[#039B9B] transition-all duration-500"
+                      style={{ width: `${(activeStep / (currentSteps.length - 1)) * 100}%` }}
+                    />
+                  </div>
+
                   {currentSteps.map((step, index) => (
                     <motion.div
                       key={index}
@@ -285,23 +284,6 @@ const InstallationPortugal = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      {/* Connection line below circles */}
-                      {/* {index < currentSteps.length - 1 && (
-                        <div 
-                          className="absolute top-8 left-1/2 h-0.5 bg-[#039B9B]/20"
-                          style={{ 
-                            width: 'calc(100% + 2rem)',
-                            transform: 'translateX(0%)'
-                          }}
-                        >
-                          <div 
-                            className={`h-full bg-[#039B9B] transition-all duration-500 ${
-                              index < activeStep ? 'w-full' : 'w-0'
-                            }`}
-                          />
-                        </div>
-                      )} */}
-                      
                       <button
                         onClick={() => handleStepClick(index)}
                         className={`w-8 h-8 rounded-full flex items-center justify-center z-10
