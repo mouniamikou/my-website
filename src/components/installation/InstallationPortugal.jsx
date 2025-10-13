@@ -209,10 +209,11 @@ const InstallationPortugal = () => {
 
 <div 
     ref={timelineRef}
-    className="relative overflow-x-auto scrollbar-hide pb-4"
+    className="relative overflow-x-auto scrollbar-hide pb-4 cursor-grab active:cursor-grabbing"
     style={{ 
       scrollbarWidth: 'none',
-      msOverflowStyle: 'none'
+      msOverflowStyle: 'none',
+      WebkitOverflowScrolling: 'touch'
     }}
   >
    
