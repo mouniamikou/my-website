@@ -44,7 +44,6 @@ async function getData(slug) {
 
 // ✅ Custom Components for PortableText Rendering
 const components = {
-  //prettier-ignore
   block: {
     h2: ({ children }) => {
       const text = children
@@ -70,7 +69,6 @@ const components = {
       );
     },
     
-
     h3: ({ children }) => {
       const text = children
         .map((child) => {
@@ -98,12 +96,38 @@ const components = {
     normal: ({ children }) => (
       <p className="text-lg my-4 leading-relaxed">{children}</p>
     ),
+    
     blockquote: ({ children }) => (
       <blockquote className="border-l-4 border-blue-500 pl-4 my-6 italic">
         {children}
       </blockquote>
     ),
   },
+  
+  // ✅ Add list handling
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside my-4 space-y-2 text-lg ml-4">
+        {children}
+      </ul>
+    ),
+    number: ({ children }) => (
+      <ol className="list-decimal list-inside my-4 space-y-2 text-lg ml-4">
+        {children}
+      </ol>
+    ),
+  },
+  
+  // ✅ Add list item handling
+  listItem: {
+    bullet: ({ children }) => (
+      <li className="leading-relaxed">{children}</li>
+    ),
+    number: ({ children }) => (
+      <li className="leading-relaxed">{children}</li>
+    ),
+  },
+  
   types: {
     image: ({ value }) => {
       if (!value?.asset?._id) return null;
@@ -129,6 +153,7 @@ const components = {
       );
     },
   },
+  
   marks: {
     link: ({ children, value }) => {
       const isInternal = value?.href?.startsWith("#");
@@ -142,11 +167,10 @@ const components = {
       );
     },
   },
-};
+  };
 
 // ✅ Main BlogPost Component
 const BlogPost = () => {
-  //prettier-ignore
   const { language } = useLanguage();
   const t = translations[language]?.blog || translations.en.blog;
   const params = useParams();
@@ -179,7 +203,6 @@ const BlogPost = () => {
               }
             : null,
         };
-        // ✅ Localize content based on language
         setPost(post);
         console.log(post);
       } catch (error) {
@@ -195,7 +218,7 @@ const BlogPost = () => {
 
   const generateSummary = (content) => {
     return content
-      .filter((block) => block.style === "h2") // Get only h2 headings
+      .filter((block) => block.style === "h2")
       .map((block) => {
         const text = block.children
           .map((child) =>
@@ -209,7 +232,7 @@ const BlogPost = () => {
         const id = text
           .toLowerCase()
           .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9-]/g, ""); // Same ID logic as in h2
+          .replace(/[^a-z0-9-]/g, "");
 
         return (
           <li key={id}>
@@ -220,7 +243,7 @@ const BlogPost = () => {
         );
       });
   };
-  // ✅ Format date based on language
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString(
       language === "fr" ? "fr-FR" : "en-US",
@@ -281,14 +304,15 @@ const BlogPost = () => {
           />
         </div>
       )}
+      
       {post.introduction && (
         <p className="text-xl text-gray-700 mb-8">
           {post.introduction[language] || post.introduction.en}
         </p>
       )}
 
-      <div className="prose  prose-lg max-w-none">
-        <nav className="mb-6 p-4 border rounded-lg bg-primary ">
+      <div className="prose prose-lg max-w-none">
+        <nav className="mb-6 p-4 border rounded-lg bg-primary">
           <h3 className="text-xl text-white font-semibold mb-2">{t.summary}</h3>
           <ul className="list-disc text-white pl-5">
             {generateSummary(post.body)}
