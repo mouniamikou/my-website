@@ -1,9 +1,20 @@
 import { sendEmail } from "@/utils/mailer";
+import { verifyRecaptcha } from "@/utils/recaptcha";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const data = await request.json();
+    const body = await request.json();
+    const { recaptchaToken, ...data } = body;
+
+    // Verify reCAPTCHA
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { success: false, message: "reCAPTCHA verification failed" },
+        { status: 403 }
+      );
+    }
 
     const { personalInfo, projectStatus } = data;
 
@@ -34,7 +45,6 @@ CLIENT NEEDS
 ${data.needs.administrative ? "- Administrative Support: Yes\n" : ""}${data.needs.consultation ? "- Legal Consultation: Yes\n" : ""}${data.needs.other ? "- Other: " + data.needs.other + "\n" : ""}`;
     }
 
-    // Create HTML content from form data with improved styling
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">New Installation Inquiry</h1>
@@ -68,7 +78,6 @@ ${data.needs.administrative ? "- Administrative Support: Yes\n" : ""}${data.need
       </div>
     `;
 
-    // Create plain text version with improved structure
     const textContent = `
 NEW INSTALLATION INQUIRY
 =======================

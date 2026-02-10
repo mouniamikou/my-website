@@ -1,9 +1,20 @@
 import { sendEmail } from "@/utils/mailer";
+import { verifyRecaptcha } from "@/utils/recaptcha";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const formData = await request.json();
+    const body = await request.json();
+    const { recaptchaToken, ...formData } = body;
+
+    // Verify reCAPTCHA
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { success: false, message: "reCAPTCHA verification failed" },
+        { status: 403 }
+      );
+    }
 
     // Helper function to format boolean values as Yes/No
     const formatBoolean = (value) => (value ? "Yes" : "No");
@@ -70,7 +81,6 @@ Selling Stage:
 ${formData.sellingStage.considering ? "- Considering: Yes\n" : ""}${formData.sellingStage.listed ? "- Listed: Yes\n" : ""}${formData.sellingStage.offerAccepted ? "- Offer Accepted: Yes\n" : ""}${formData.sellingStage.promiseSigned ? "- Promise Signed: Yes\n" : ""}${formData.sellingStage.deedSigned ? "- Deed Signed: Yes\n" : ""}${formData.sellingStage.promiseDate ? "- Promise Date: " + formData.sellingStage.promiseDate + "\n" : ""}${formData.sellingStage.deedDate ? "- Deed Date: " + formData.sellingStage.deedDate + "\n" : ""}`;
     }
 
-    // Create HTML content from form data with improved styling
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">New Real Estate Inquiry</h1>
@@ -115,7 +125,6 @@ ${formData.sellingStage.considering ? "- Considering: Yes\n" : ""}${formData.sel
       </div>
     `;
 
-    // Create plain text version with improved structure
     const textContent = `
 NEW REAL ESTATE INQUIRY
 =====================

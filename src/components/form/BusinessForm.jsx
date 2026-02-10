@@ -4,12 +4,14 @@ import { motion } from "framer-motion";
 import PersonalInfoForm from "./PersonalInfo";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/translations";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import SuccessMessage from "../SuccessMessage";
 
 const BusinessForm = ({ onSubmit }) => {
   const { language } = useLanguage();
   const t =
     translations[language]?.businessForm || translations.en.businessForm;
+  const { getToken } = useRecaptcha();
 
   const [formData, setFormData] = useState({
     personalInfo: {
@@ -19,9 +21,9 @@ const BusinessForm = ({ onSubmit }) => {
       phone: "",
       currentCountry: "",
     },
-    businessType: "", // 'create', 'assist', or 'other'
-    createType: "", // 'self-employed' or 'company'
-    companyStructure: "", // 'alone' or 'partners'
+    businessType: "",
+    createType: "",
+    companyStructure: "",
     needAdvice: false,
     existingBusiness: {
       contracts: false,
@@ -31,7 +33,7 @@ const BusinessForm = ({ onSubmit }) => {
       otherText: "",
     },
     businessSector: "",
-    timeline: "", // '<1month', '1-3months', '>3months'
+    timeline: "",
     other: "",
     termsAccepted: false,
     name: "",
@@ -55,12 +57,14 @@ const BusinessForm = ({ onSubmit }) => {
     setSubmitStatus(null);
 
     try {
+      const recaptchaToken = await getToken("business_form");
+
       const response = await fetch("/api/business", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, recaptchaToken }),
       });
 
       const result = await response.json();
@@ -93,7 +97,6 @@ const BusinessForm = ({ onSubmit }) => {
           name: "",
           message: "",
         });
-        // only scroll to top on contact pages
         if (onSubmit) {
           onSubmit();
         }
@@ -122,7 +125,7 @@ const BusinessForm = ({ onSubmit }) => {
       className="max-w-2xl mx-auto p-6 mb-4 bg-white rounded-xl shadow-lg"
       style={{
         backgroundImage: "url('/blob-scene-haikei (2).svg')",
-        backgroundSize: "cover", // Or 'contain', depending on your preference
+        backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
       }}
@@ -133,11 +136,6 @@ const BusinessForm = ({ onSubmit }) => {
         className="space-y-6"
         onSubmit={handleSubmit}
       >
-        {submitStatus === "success" && (
-          <div className="success-message">
-            Your business inquiry has been submitted successfully!
-          </div>
-        )}
         {submitStatus === "error" && (
           <div className="error-message">
             There was an error submitting your form. Please try again.

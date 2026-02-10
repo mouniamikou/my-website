@@ -5,13 +5,14 @@ import PersonalInfoForm from "./PersonalInfo";
 import SuccessMessage from "../SuccessMessage";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/translations";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 
 const RealEstateForm = ({ onSubmit }) => {
   const { language } = useLanguage();
   const t =
     translations[language]?.realEstateForm || translations.en.realEstateForm;
+  const { getToken } = useRecaptcha();
 
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     personalInfo: {
       firstName: "",
@@ -21,8 +22,8 @@ const RealEstateForm = ({ onSubmit }) => {
       currentCountry: "",
     },
     projectStatus: "",
-    transactionType: "", // 'buy' or 'sell'
-    budget: "", // for buying
+    transactionType: "",
+    budget: "",
     projectStage: {
       searching: false,
       identifiedProperty: false,
@@ -50,7 +51,7 @@ const RealEstateForm = ({ onSubmit }) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // 'success', 'error', or null
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -65,23 +66,23 @@ const RealEstateForm = ({ onSubmit }) => {
     setSubmitStatus(null);
 
     try {
+      const recaptchaToken = await getToken("realestate_form");
+
       const response = await fetch("/api/realestate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, recaptchaToken }),
       });
 
       const result = await response.json();
 
       if (result.success) {
         setSubmitStatus("success");
-        // only scroll to top on contact pages
         if (onSubmit) {
           onSubmit();
         }
-        // Reset form
         setFormData({
           personalInfo: {
             firstName: "",
@@ -91,8 +92,8 @@ const RealEstateForm = ({ onSubmit }) => {
             currentCountry: "",
           },
           projectStatus: "",
-          transactionType: "", // 'buy' or 'sell'
-          budget: "", // for buying
+          transactionType: "",
+          budget: "",
           projectStage: {
             searching: false,
             identifiedProperty: false,
@@ -138,7 +139,7 @@ const RealEstateForm = ({ onSubmit }) => {
       className="max-w-2xl mx-auto p-6 mb-4 bg-white rounded-xl shadow-lg"
       style={{
         backgroundImage: "url('/blob-scene-haikei (2).svg')",
-        backgroundSize: "cover", // Or 'contain', depending on your preference
+        backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
       }}
@@ -149,12 +150,6 @@ const RealEstateForm = ({ onSubmit }) => {
         className="space-y-6"
         onSubmit={handleSubmit}
       >
-        {/* Display success/error messages */}
-        {submitStatus === "success" && (
-          <div className="success-message">
-            Your real estate inquiry has been submitted successfully!
-          </div>
-        )}
         {submitStatus === "error" && (
           <div className="error-message">
             There was an error submitting your form. Please try again.
@@ -166,6 +161,7 @@ const RealEstateForm = ({ onSubmit }) => {
           onFormDataChange={setFormData}
           formType="realEstate"
         />
+
         {/* Transaction Type Selection */}
         <motion.section variants={fadeIn} className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-800">
@@ -206,7 +202,6 @@ const RealEstateForm = ({ onSubmit }) => {
         {/* Buying Section */}
         {formData.transactionType === "buy" && (
           <motion.section variants={fadeIn} className="space-y-6">
-            {/* Budget Selection */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-800">
                 {t.budget.title}
@@ -231,7 +226,6 @@ const RealEstateForm = ({ onSubmit }) => {
               </div>
             </div>
 
-            {/* Project Stage */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-800">
                 {t.projectStage.title}

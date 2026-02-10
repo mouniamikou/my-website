@@ -1,9 +1,20 @@
 import { sendEmail } from "@/utils/mailer";
+import { verifyRecaptcha } from "@/utils/recaptcha";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const formData = await request.json();
+    const body = await request.json();
+    const { recaptchaToken, ...formData } = body;
+
+    // Verify reCAPTCHA
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { success: false, message: "reCAPTCHA verification failed" },
+        { status: 403 }
+      );
+    }
 
     // Helper function to format boolean values
     const formatBoolean = (value) => (value ? "Yes" : "No");
@@ -36,7 +47,6 @@ EXISTING BUSINESS NEEDS
 ${formData.existingBusiness.contracts ? "- Contracts: Yes\n" : ""}${formData.existingBusiness.compliance ? "- Compliance: Yes\n" : ""}${formData.existingBusiness.disputes ? "- Disputes: Yes\n" : ""}${formData.existingBusiness.other ? "- Other: Yes\n" : ""}${formData.existingBusiness.otherText ? "- Details: " + formData.existingBusiness.otherText + "\n" : ""}`;
     }
 
-    // Create HTML content from form data with improved styling
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">New Business Inquiry</h1>
@@ -82,7 +92,6 @@ ${formData.existingBusiness.contracts ? "- Contracts: Yes\n" : ""}${formData.exi
       </div>
     `;
 
-    // Create plain text version with improved structure
     const textContent = `
 NEW BUSINESS INQUIRY
 ===================

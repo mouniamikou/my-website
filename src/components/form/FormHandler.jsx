@@ -5,11 +5,14 @@ import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/translations";
 import PersonalInfoForm from "./PersonalInfo";
 import { useRouter } from "next/navigation";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import SuccessMessage from "../SuccessMessage";
+
 const FormHandler = ({ formType, FormComponent }) => {
   const router = useRouter();
   const { language } = useLanguage();
   const t = translations[language]?.mainForm || translations.en.mainForm;
+  const { getToken } = useRecaptcha();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
 
@@ -39,19 +42,20 @@ const FormHandler = ({ formType, FormComponent }) => {
     setIsSubmitting(true);
     setSubmitStatus(null);
     try {
+      const recaptchaToken = await getToken("general_form");
+
       const response = await fetch("/api/general", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, recaptchaToken }),
       });
 
       const result = await response.json();
 
       if (!response.ok || !result.success) {
         setSubmitStatus("error");
-
         throw new Error(result.error || "Failed to send email");
       }
       setSubmitStatus("success");
@@ -121,9 +125,10 @@ const FormHandler = ({ formType, FormComponent }) => {
             <div className="flex flex-col space-y-4">
               <motion.button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-[#039B9B] text-white px-6 py-3 rounded-lg hover:bg-[#028787] transition-colors font-semibold"
               >
-                {t.buttons.submit}
+                {isSubmitting ? "Submitting..." : t.buttons.submit}
               </motion.button>
 
               <motion.button

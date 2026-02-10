@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import PersonalInfoForm from "./PersonalInfo";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/translations";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import SuccessMessage from "../SuccessMessage";
 
 const InstallationForm = ({ onSubmit }) => {
@@ -11,6 +12,7 @@ const InstallationForm = ({ onSubmit }) => {
   const t =
     translations[language]?.installationForm ||
     translations.en.installationForm;
+  const { getToken } = useRecaptcha();
 
   const [formData, setFormData] = useState({
     personalInfo: {
@@ -21,20 +23,20 @@ const InstallationForm = ({ onSubmit }) => {
       currentCountry: "",
     },
     projectStatus: "",
-    residencyStatus: "", // 'eu' or 'non-eu'
-    portugaStatus: "", // 'moving' or 'resident'
+    residencyStatus: "",
+    portugaStatus: "",
     needs: {
       administrative: false,
       consultation: false,
       other: false,
     },
-    visaType: "", // 'D2' or 'D7'
+    visaType: "",
     aimaDate: "",
     termsAccepted: false,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // 'success', 'error', or null
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -55,23 +57,23 @@ const InstallationForm = ({ onSubmit }) => {
     setSubmitStatus(null);
 
     try {
+      const recaptchaToken = await getToken("installation_form");
+
       const response = await fetch("/api/installation", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, recaptchaToken }),
       });
 
       const result = await response.json();
 
       if (result.success) {
         setSubmitStatus("success");
-        // only scroll to top on contact pages
         if (onSubmit) {
           onSubmit();
         }
-        // Reset form
         setFormData({
           personalInfo: {
             firstName: "",
@@ -81,14 +83,14 @@ const InstallationForm = ({ onSubmit }) => {
             currentCountry: "",
           },
           projectStatus: "",
-          residencyStatus: "", // 'eu' or 'non-eu'
-          portugaStatus: "", // 'moving' or 'resident'
+          residencyStatus: "",
+          portugaStatus: "",
           needs: {
             administrative: false,
             consultation: false,
             other: false,
           },
-          visaType: "", // 'D2' or 'D7'
+          visaType: "",
           aimaDate: "",
           termsAccepted: false,
         });
@@ -102,6 +104,7 @@ const InstallationForm = ({ onSubmit }) => {
       setIsSubmitting(false);
     }
   };
+
   if (submitStatus === "success") {
     return <SuccessMessage />;
   }
@@ -111,7 +114,7 @@ const InstallationForm = ({ onSubmit }) => {
       className="max-w-2xl mx-auto p-6 mb-4 bg-white rounded-xl shadow-lg"
       style={{
         backgroundImage: "url('/blob-scene-haikei (2).svg')",
-        backgroundSize: "cover", // Or 'contain', depending on your preference
+        backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
       }}
@@ -165,7 +168,7 @@ const InstallationForm = ({ onSubmit }) => {
           </div>
         </motion.section>
 
-        {/* Conditional Sections based on EU/Non-EU status */}
+        {/* EU Section */}
         {formData.residencyStatus === "eu" && (
           <motion.section
             variants={fadeIn}
@@ -273,6 +276,7 @@ const InstallationForm = ({ onSubmit }) => {
           </motion.section>
         )}
 
+        {/* Non-EU Section */}
         {formData.residencyStatus === "non-eu" && (
           <motion.section
             variants={fadeIn}
@@ -285,7 +289,6 @@ const InstallationForm = ({ onSubmit }) => {
                 {t.needs.title}
               </h3>
 
-              {/* Single choice visa options */}
               <div className="space-y-2">
                 <label className="flex items-center space-x-3">
                   <input
@@ -324,7 +327,6 @@ const InstallationForm = ({ onSubmit }) => {
                   <span className="text-gray-700">{t.nonEuNeeds.d7Visa}</span>
                 </label>
 
-                {/* AIMA appointment option */}
                 <label className="flex items-center space-x-3">
                   <input
                     type="radio"
@@ -345,7 +347,6 @@ const InstallationForm = ({ onSubmit }) => {
                   </span>
                 </label>
 
-                {/* Conditional AIMA date input */}
                 {formData.needType === "aima" && (
                   <div className="ml-7 mt-2">
                     <label className="block text-sm font-medium text-gray-700">
@@ -363,7 +364,6 @@ const InstallationForm = ({ onSubmit }) => {
                 )}
               </div>
 
-              {/* Multiple choice options */}
               <div className="space-y-2 mt-4">
                 <label className="flex items-center space-x-3">
                   <input
@@ -400,7 +400,6 @@ const InstallationForm = ({ onSubmit }) => {
                   <span className="text-gray-700">{t.needs.other}</span>
                 </label>
 
-                {/* Conditional text field for "other" */}
                 {formData.needs.other && (
                   <div className="ml-7 mt-2">
                     <input
@@ -442,11 +441,6 @@ const InstallationForm = ({ onSubmit }) => {
         </motion.section>
 
         <motion.div variants={fadeIn} className="pt-6">
-          {submitStatus === "success" && (
-            <div className="success-message">
-              Your installation inquiry has been submitted successfully!
-            </div>
-          )}
           {submitStatus === "error" && (
             <div className="error-message">
               There was an error submitting your form. Please try again.
@@ -454,7 +448,7 @@ const InstallationForm = ({ onSubmit }) => {
           )}
           <button
             type="submit"
-            className="w-full bg-[#039B9B] text-white px-6 py-3 rounded-lg hover:bg-[#028787]] transition-colors font-semibold"
+            className="w-full bg-[#039B9B] text-white px-6 py-3 rounded-lg hover:bg-[#028787] transition-colors font-semibold"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Submitting..." : t.submit}

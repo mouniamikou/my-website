@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/utils/mailer";
+import { verifyRecaptcha } from "@/utils/recaptcha";
 
 export async function POST(req) {
   try {
-    const formData = await req.json();
+    const body = await req.json();
+    const { recaptchaToken, ...formData } = body;
+
+    // Verify reCAPTCHA
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { success: false, error: "reCAPTCHA verification failed" },
+        { status: 403 }
+      );
+    }
 
     // Helper function to format boolean values
     const formatBoolean = (value) => (value ? "Yes" : "No");
@@ -119,7 +130,6 @@ ${formData.otherDetails}
 `;
     }
 
-    // Create HTML content for the email with improved styling
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">${subject}</h1>
@@ -157,7 +167,6 @@ ${formData.otherDetails}
       </div>
     `;
 
-    // Create plain text version with improved structure
     const textContent = `
 ${subject.toUpperCase()}
 ${"=".repeat(subject.length)}
@@ -174,7 +183,6 @@ ${formData.additionalInfo ? `ADDITIONAL INFORMATION\n--------------------\n${for
 Submitted on: ${new Date().toLocaleString()}
     `;
 
-    // Use your existing mailer utility
     const result = await sendEmail(subject, htmlContent, textContent);
 
     if (!result.success) {
