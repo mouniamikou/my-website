@@ -25,7 +25,7 @@ export const translations = {
     about: {
       title: "À propos de moi",
       paragraphs: [
-        "De Casablanca à Lisbonne, en passant par Paris et Brisance (Australie), mon parcours d'avocate reflète ma passion pour l'international.",
+        "De Casablanca à Lisbonne, en passant par Paris et Brisance, mon parcours d'avocate reflète ma passion pour l'international.",
         "J'ai débuté ma carrière dans des cabinets d'avocats prestigieux à Paris (Clifford Chance, Allen & Overy, Hogan Lovells), où j'ai développé une expertise en structuration d'opérations, notamment immobilières, en prenant en compte les aspects juridiques, fiscaux et pratiques.",
         "Séduite par la qualité de vie et la sécurité qu'offre le Portugal, je me suis installée à Lisbonne en 2021.",
         "Je mets aujourd'hui mon expertise au service des particuliers et entrepreneurs souhaitant s'établir au Portugal, en leur offrant un accompagnement juridique personnalisé et complet grâce à un réseau de partenaires de confiance.",
